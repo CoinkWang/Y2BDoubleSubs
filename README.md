@@ -17,5 +17,12 @@ hook_request 方法会组装一个新的 xhr 请求翻译后的字幕，通过 x
 # Usage
 hook_request 方法发布在 GreasyFork，浏览器安装油猴脚本后[一键安装](https://greasyfork.org/zh-CN/scripts/397363-youtube-double-language-subtitle-youtube-%E5%8F%8C%E8%AF%AD%E5%AD%97%E5%B9%95)
 
+# Confuse
+在我使用xhook进行拦截时(1.5版本前)，对于一些fetch请求，xhook可能做了一些header过滤（feature or bug？）导致虽然cookie正确，但一些重要的验证头并没有被发送（其中就包含 youtube 作为身份验证的 authorization 头），于是乎，youtube 后端并不能验证身份，返回401，造成“明明我登陆了点赞了订阅了前端也响应了但是实际上统统没有成功”的结果。
+
+我先是邮件联系了xhook的作者，目前没有得到回应。由于目前水平有限，没有从xhook的源码中发现什么端倪，于是我将依赖的xhook更换成了ajax-hook，重写了一遍逻辑，这次没有出现问题。
+
+如果有前端朋友知道 xhook 发送请求的 header 莫名其妙少掉的原因，还请不吝赐教 orz
+
 # preview
 ![demo](demo.png)
