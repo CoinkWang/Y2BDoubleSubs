@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Youtube double language subtitle / Youtube 双语字幕 
-// @version      1.6.1
+// @version      1.6.2
 // @description  Youtube double language subtitle / Youtube 双语字幕. 如果不能自动加载，请关闭字幕再次打开即可。默认语言为浏览器首选语言。
 // @author       Coink
 // @match        *://www.youtube.com/watch?v=*
@@ -37,9 +37,10 @@
                         if (defaultJson.events[i].segs[0].utf8 !== localeJson.events[i].segs[0].utf8){
                             // not merge subs while the are the same
                             defaultJson.events[i].segs[0].utf8 += ('\n' + localeJson.events[i].segs[0].utf8)
+                            console.log(defaultJson.events[i].segs[0].utf8)
                         }
                     }
-                    response.response =  JSON.stringify(defaultJson)
+                    response.response = JSON.stringify(defaultJson)
                 } else {
                     // when length of segments are not the same (e.g. automatic generated english subs)
                     let pureEvents = defaultJson.events.filter(event => event.aAppend !== 1 && event.segs)
@@ -48,10 +49,11 @@
                         let currentRawEvents = pureEvents.filter(pe => currentLocaleEvent.tStartMs <= pe.tStartMs && pe.tStartMs < currentLocaleEvent.tStartMs + currentLocaleEvent.dDurationMs)
                         let line = '';
                         currentRawEvents.forEach(ev => {
-                            ev.segs.forEach(seg => line += seg.utf8);
+                            ev.segs.forEach(seg => (line += seg.utf8));
                             line += ' '; // add space to avoid words stick together
                         })
-                        localeJson.events[i].segs[0].utf8 = line + '\n' +  localeJson.events[i].segs[0].utf8
+                        localeJson.events[i].segs[0].utf8 = line + '\n' + localeJson.events[i].segs[0].utf8;
+                        console.log(localeJson.events[i].segs[0].utf8)
                     }
                     response.response = JSON.stringify(localeJson)
                 }
