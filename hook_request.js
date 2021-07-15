@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         Youtube double language subtitle / Youtube 双语字幕 
-// @version      1.6.2
+// @name         Youtube double language subtitle / Youtube 双语字幕
+// @version      1.6.3
 // @description  Youtube double language subtitle / Youtube 双语字幕. 如果不能自动加载，请关闭字幕再次打开即可。默认语言为浏览器首选语言。
 // @author       Coink
 // @match        *://www.youtube.com/watch?v=*
@@ -45,6 +45,7 @@
                     // when length of segments are not the same (e.g. automatic generated english subs)
                     let pureEvents = defaultJson.events.filter(event => event.aAppend !== 1 && event.segs)
                     for (let i = 0,len = localeJson.events.length; i<len; i++) {
+                        if (!localeJson.events[i].segs) continue
                         let currentLocaleEvent = localeJson.events[i]
                         let currentRawEvents = pureEvents.filter(pe => currentLocaleEvent.tStartMs <= pe.tStartMs && pe.tStartMs < currentLocaleEvent.tStartMs + currentLocaleEvent.dDurationMs)
                         let line = '';
