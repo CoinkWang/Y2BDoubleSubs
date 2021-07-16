@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Youtube double language subtitle / Youtube 双语字幕
-// @version      1.6.3
+// @version      1.7.0
 // @description  Youtube double language subtitle / Youtube 双语字幕. 如果不能自动加载，请关闭字幕再次打开即可。默认语言为浏览器首选语言。
 // @author       Coink
 // @match        *://www.youtube.com/watch?v=*
@@ -31,34 +31,46 @@
                     defaultJson = JSON.parse(response.response)
                 }
                 localeJson = JSON.parse(xhr.response)
-                    // Merge default subs with locale language subs
-                if (defaultJson.events.length === localeJson.events.length) {
+                let isOfficialSub = true;
+                for (let i = 0; i < defaultJson.events.length; i++) {
+                    if (defaultJson.events[i].segs && defaultJson.events[i].segs.length > 1) {
+                        isOfficialSub = false;
+                        break;
+                    }
+                }
+                // Merge default subs with locale language subs
+                if (isOfficialSub) {
                     // when length of segments are the same
                     for (let i = 0, len = defaultJson.events.length; i < len; i++) {
                         if (!defaultJson.events[i].segs) continue
                         if (defaultJson.events[i].segs[0].utf8 !== localeJson.events[i].segs[0].utf8) {
                             // not merge subs while the are the same
                             defaultJson.events[i].segs[0].utf8 += ('\n' + localeJson.events[i].segs[0].utf8)
-                            console.log(defaultJson.events[i].segs[0].utf8)
+                                // console.log(defaultJson.events[i].segs[0].utf8)
                         }
                     }
                     response.response = JSON.stringify(defaultJson)
                 } else {
                     // when length of segments are not the same (e.g. automatic generated english subs)
-                    let pureEvents = defaultJson.events.filter(event => event.aAppend !== 1 && event.segs)
-                    for (let i = 0, len = localeJson.events.length; i < len; i++) {
-                        if (!localeJson.events[i].segs) continue
-                        let currentLocaleEvent = localeJson.events[i]
-                        let currentRawEvents = pureEvents.filter(pe => currentLocaleEvent.tStartMs <= pe.tStartMs && pe.tStartMs < currentLocaleEvent.tStartMs + currentLocaleEvent.dDurationMs)
-                        let line = '';
-                        currentRawEvents.forEach(ev => {
-                            ev.segs.forEach(seg => (line += seg.utf8));
-                            line += ' '; // add space to avoid words stick together
+                    let pureLocalEvents = localeJson.events.filter(event => event.aAppend !== 1 && event.segs)
+                    for (let i = 0, len = defaultJson.events.length; i < len; i++) {
+                        if (!defaultJson.events[i].segs) continue
+                        let currentdefaultEvent = defaultJson.events[i]
+                        let currentStart = currentdefaultEvent.tStartMs,
+                            currentEnd = currentStart + currentdefaultEvent.dDurationMs
+                        let currentLocalEvents = pureLocalEvents.filter(pe => currentStart <= pe.tStartMs && pe.tStartMs < currentEnd)
+                        let localLine = '',
+                            defaultLine = ''
+                        currentLocalEvents.forEach(ev => {
+                            ev.segs.forEach(seg => (localLine += seg.utf8));
+                            localLine += ' '; // add space to avoid words stick together
                         })
-                        localeJson.events[i].segs[0].utf8 = line + '\n' + localeJson.events[i].segs[0].utf8;
-                        console.log(localeJson.events[i].segs[0].utf8)
+                        currentdefaultEvent.segs.forEach(seg => (defaultLine += seg.utf8))
+                        defaultJson.events[i].segs[0].utf8 = defaultLine + '\n' + localLine
+                        defaultJson.events[i].segs = [defaultJson.events[i].segs[0]]
+                            // console.log(defaultJson.events[i].segs[0].utf8)
                     }
-                    response.response = JSON.stringify(localeJson)
+                    response.response = JSON.stringify(defaultJson)
                 }
             }
             handler.resolve(response)
