@@ -15,8 +15,6 @@ hook_request 方法会组装一个新的 xhr 请求翻译后的字幕，通过 x
 缺点：遇到原字幕和翻译字幕不一一对应的时候很 egg pain，目前使用 filter 根据时间戳来判断，复杂度上升到了 O(n\*a\*b)，不过好在 a 基本是 1 或者 2，而 b 是一个句子中单词的数量，不会太大，所以都可以近似看作常数。
 
 # Usage
-**UPDATE**: 修复和改进的 fork 版[一键安装](https://github.com/AndySuen/Y2BDoubleSubs/raw/master/hook_request.user.js)
-
 hook_request 方法发布在 GreasyFork，浏览器安装油猴脚本后[一键安装](https://greasyfork.org/zh-CN/scripts/397363-youtube-double-language-subtitle-youtube-%E5%8F%8C%E8%AF%AD%E5%AD%97%E5%B9%95)
 
 # Confuse
@@ -28,3 +26,6 @@ hook_request 方法发布在 GreasyFork，浏览器安装油猴脚本后[一键�
 
 # preview
 ![demo](demo.png)
+
+# Contributor
+- [AndySuen](https://github.com/AndySuen)
