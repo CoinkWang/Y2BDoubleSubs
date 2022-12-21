@@ -47,7 +47,6 @@
                         if (defaultJsonEvent.segs[0].utf8 !== defaultJsonEvent.segs[0].utf8) {
                             // not merge subs while the are the same
                             defaultJsonEvent.segs[0].utf8 += ('\n' + defaultJsonEvent.segs[0].utf8)
-                                // console.log(defaultJson.events[i].segs[0].utf8)
                         }
                     }
                     response.response = JSON.stringify(defaultJson)
@@ -60,15 +59,17 @@
                         let currentStart = defaultJsonEvent.tStartMs,
                             currentEnd = currentStart + defaultJsonEvent.dDurationMs
                         let currentLocalEvents = pureLocalEvents.filter(pe => currentStart <= pe.tStartMs && pe.tStartMs < currentEnd)
-                        let localLine = '',
-                            defaultLine = ''
+                        let localLine = ''
                         for (const ev of currentLocalEvents) {
                             for (const seg of ev.segs) {
                                 localLine += seg.utf8
                             }
                             localLine += ' '; // add space to avoid words stick together
                         }
-                        defaultJsonEvent.segs.forEach(seg => (defaultLine += seg.utf8))
+                        let defaultLine = ''
+                        for (const seg of defaultJsonEvent.segs) {
+                            defaultLine += seg.utf8
+                        }
                         defaultJsonEvent.segs[0].utf8 = defaultLine + '\n' + localLine
                         defaultJsonEvent.segs = [defaultJsonEvent.segs[0]]
                     }
