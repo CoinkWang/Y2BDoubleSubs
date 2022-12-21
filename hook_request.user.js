@@ -23,7 +23,7 @@
                 let xhr = new XMLHttpRequest();
                 // Use RegExp to clean '&tlang=...' in our xhr request params while using Y2B auto translate.
                 let url = response.config.url
-                url = url.replace(/(^|[&?])tlang=([^&]*)/g, '')
+                url = url.replace(/(^|[&?])tlang=[^&]*/g, '')
                 url = `${url}&tlang=${localeLang}&translate_h00ked`
                 xhr.open('GET', url, false);
                 xhr.send();
