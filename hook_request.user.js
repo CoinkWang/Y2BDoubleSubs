@@ -42,11 +42,13 @@
                 // Merge default subs with locale language subs
                 if (isOfficialSub) {
                     // when length of segments are the same
-                    for (const defaultJsonEvent of defaultJson.events) {
+                    for (let i = 0, len = defaultJson.events.length; i < len; i++) {
+                        const defaultJsonEvent = defaultJson.events[i]
                         if (!defaultJsonEvent.segs) continue
-                        if (defaultJsonEvent.segs[0].utf8 !== defaultJsonEvent.segs[0].utf8) {
+                        const localeJsonEvent = localeJson.events[i]
+                        if (`${defaultJsonEvent.segs[0].utf8}`.trim() !== `${localeJsonEvent.segs[0].utf8}`.trim()) {
                             // not merge subs while the are the same
-                            defaultJsonEvent.segs[0].utf8 += ('\n' + defaultJsonEvent.segs[0].utf8)
+                            defaultJsonEvent.segs[0].utf8 += ('\n' + localeJsonEvent.segs[0].utf8)
                         }
                     }
                     response.response = JSON.stringify(defaultJson)
