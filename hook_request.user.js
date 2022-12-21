@@ -27,7 +27,11 @@
                 url = `${url}&tlang=${localeLang}&translate_h00ked`
                 xhr.open('GET', url, false);
                 xhr.send();
-                const defaultJson = (response.response && JSON.parse(response.response).events) ? JSON.parse(response.response) : null
+                let defaultJson = null
+                if (response.response) {
+                    const jsonResponse = JSON.parse(response.response)
+                    if (jsonResponse.events) defaultJson = jsonResponse
+                }
                 let isOfficialSub = true;
                 for (const defaultJsonEvent of defaultJson.events) {
                     if (defaultJsonEvent.segs && defaultJsonEvent.segs.length > 1) {
