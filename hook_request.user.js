@@ -8,6 +8,7 @@
 // @match        *://www.youtube.com/*
 // @require      https://unpkg.com/ajax-hook@2.0.2/dist/ajaxhook.min.js
 // @grant        none
+// @run-at       document-start
 // @namespace    https://github.com/CoinkWang/Y2BDoubleSubs
 // ==/UserScript==
 
