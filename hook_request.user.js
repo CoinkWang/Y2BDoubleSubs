@@ -22,18 +22,15 @@
             if (response.config.url.includes('/api/timedtext') && !response.config.url.includes('&translate_h00ked')) {
                 let xhr = new XMLHttpRequest();
                 // Use RegExp to clean '&tlang=...' in our xhr request params while using Y2B auto translate.
-                let reg = new RegExp("(^|[&?])tlang=([^&]*)", 'g');
-                xhr.open('GET', `${response.config.url.replace(reg,'')}&tlang=${localeLang}&translate_h00ked`, false);
+                let url = response.config.url
+                url = url.replace(/(^|[&?])tlang=([^&]*)/g, '')
+                url = `${url}&tlang=${localeLang}&translate_h00ked`
+                xhr.open('GET', url, false);
                 xhr.send();
-                let defaultJson = null,
-                    localeJson = null;
-                if (response.response && JSON.parse(response.response).events) {
-                    defaultJson = JSON.parse(response.response)
-                }
-                localeJson = JSON.parse(xhr.response)
+                const defaultJson = (response.response && JSON.parse(response.response).events) ? JSON.parse(response.response) : null
                 let isOfficialSub = true;
-                for (let i = 0; i < defaultJson.events.length; i++) {
-                    if (defaultJson.events[i].segs && defaultJson.events[i].segs.length > 1) {
+                for (const defaultJsonEvent of defaultJson.events) {
+                    if (defaultJsonEvent.segs && defaultJsonEvent.segs.length > 1) {
                         isOfficialSub = false;
                         break;
                     }
@@ -41,34 +38,35 @@
                 // Merge default subs with locale language subs
                 if (isOfficialSub) {
                     // when length of segments are the same
-                    for (let i = 0, len = defaultJson.events.length; i < len; i++) {
-                        if (!defaultJson.events[i].segs) continue
-                        if (defaultJson.events[i].segs[0].utf8 !== localeJson.events[i].segs[0].utf8) {
+                    for (const defaultJsonEvent of defaultJson.events) {
+                        if (!defaultJsonEvent.segs) continue
+                        if (defaultJsonEvent.segs[0].utf8 !== defaultJsonEvent.segs[0].utf8) {
                             // not merge subs while the are the same
-                            defaultJson.events[i].segs[0].utf8 += ('\n' + localeJson.events[i].segs[0].utf8)
+                            defaultJsonEvent.segs[0].utf8 += ('\n' + defaultJsonEvent.segs[0].utf8)
                                 // console.log(defaultJson.events[i].segs[0].utf8)
                         }
                     }
                     response.response = JSON.stringify(defaultJson)
                 } else {
                     // when length of segments are not the same (e.g. automatic generated english subs)
+                    const localeJson = JSON.parse(xhr.response)
                     let pureLocalEvents = localeJson.events.filter(event => event.aAppend !== 1 && event.segs)
-                    for (let i = 0, len = defaultJson.events.length; i < len; i++) {
-                        if (!defaultJson.events[i].segs) continue
-                        let currentdefaultEvent = defaultJson.events[i]
-                        let currentStart = currentdefaultEvent.tStartMs,
-                            currentEnd = currentStart + currentdefaultEvent.dDurationMs
+                    for (const defaultJsonEvent of defaultJson.events) {
+                        if (!defaultJsonEvent.segs) continue
+                        let currentStart = defaultJsonEvent.tStartMs,
+                            currentEnd = currentStart + defaultJsonEvent.dDurationMs
                         let currentLocalEvents = pureLocalEvents.filter(pe => currentStart <= pe.tStartMs && pe.tStartMs < currentEnd)
                         let localLine = '',
                             defaultLine = ''
-                        currentLocalEvents.forEach(ev => {
-                            ev.segs.forEach(seg => (localLine += seg.utf8));
+                        for (const ev of currentLocalEvents) {
+                            for (const seg of ev.segs) {
+                                localLine += seg.utf8
+                            }
                             localLine += ' '; // add space to avoid words stick together
-                        })
-                        currentdefaultEvent.segs.forEach(seg => (defaultLine += seg.utf8))
-                        defaultJson.events[i].segs[0].utf8 = defaultLine + '\n' + localLine
-                        defaultJson.events[i].segs = [defaultJson.events[i].segs[0]]
-                            // console.log(defaultJson.events[i].segs[0].utf8)
+                        }
+                        defaultJsonEvent.segs.forEach(seg => (defaultLine += seg.utf8))
+                        defaultJsonEvent.segs[0].utf8 = defaultLine + '\n' + localLine
+                        defaultJsonEvent.segs = [defaultJsonEvent.segs[0]]
                     }
                     response.response = JSON.stringify(defaultJson)
                 }
