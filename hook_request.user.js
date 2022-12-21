@@ -32,6 +32,7 @@
                     const jsonResponse = JSON.parse(response.response)
                     if (jsonResponse.events) defaultJson = jsonResponse
                 }
+                const localeJson = JSON.parse(xhr.response)
                 let isOfficialSub = true;
                 for (const defaultJsonEvent of defaultJson.events) {
                     if (defaultJsonEvent.segs && defaultJsonEvent.segs.length > 1) {
@@ -54,7 +55,6 @@
                     response.response = JSON.stringify(defaultJson)
                 } else {
                     // when length of segments are not the same (e.g. automatic generated english subs)
-                    const localeJson = JSON.parse(xhr.response)
                     let pureLocalEvents = localeJson.events.filter(event => event.aAppend !== 1 && event.segs)
                     for (const defaultJsonEvent of defaultJson.events) {
                         if (!defaultJsonEvent.segs) continue
