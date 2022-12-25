@@ -13,7 +13,7 @@
 // ==/UserScript==
 
 (function() {
-    let localeLang = navigator.language ? navigator.language : 'en'
+    let localeLang = document.documentElement.lang || navigator.language || 'en' // follow the language used in YouTube Page
         // localeLang = 'zh'  // uncomment this line to define the language you wish here
     ah.proxy({
         onRequest: (config, handler) => {
