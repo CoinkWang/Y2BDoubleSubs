@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Youtube double language subtitle / Youtube 双语字幕
-// @version      1.7.0
+// @version      1.8.0
 // @description  Youtube double language subtitle / Youtube 双语字幕. 如果不能自动加载，请关闭字幕再次打开即可。默认语言为浏览器首选语言。
 // @author       Coink
 // @match        *://www.youtube.com/watch?v=*
@@ -49,7 +49,7 @@
                         if (!defaultJsonEvent.segs) continue
                         const localeJsonEvent = localeJson.events[i]
                         if (`${defaultJsonEvent.segs[0].utf8}`.trim() !== `${localeJsonEvent.segs[0].utf8}`.trim()) {
-                            // not merge subs while the are the same
+                            // avoid merge subs while the are the same
                             defaultJsonEvent.segs[0].utf8 += ('\n' + localeJsonEvent.segs[0].utf8)
                         }
                     }
@@ -67,7 +67,7 @@
                             for (const seg of ev.segs) {
                                 localLine += seg.utf8
                             }
-                            localLine += ' '; // add space to avoid words stick together
+                            localLine += '﻿'; // add ZWSP to avoid words stick together
                         }
                         let defaultLine = ''
                         for (const seg of defaultJsonEvent.segs) {
