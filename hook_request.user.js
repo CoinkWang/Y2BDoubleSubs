@@ -6,7 +6,7 @@
 // @match        *://www.youtube.com/watch?v=*
 // @match        *://www.youtube.com
 // @match        *://www.youtube.com/*
-// @require      https://unpkg.com/ajax-hook@2.0.2/dist/ajaxhook.min.js
+// @require      https://unpkg.com/ajax-hook@2.1.3/dist/ajaxhook.min.js
 // @grant        none
 // @run-at       document-start
 // @namespace    https://github.com/CoinkWang/Y2BDoubleSubs
