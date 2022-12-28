@@ -17,6 +17,15 @@
 (function () {
     let localeLang = document.documentElement.lang || navigator.language || 'en' // follow the language used in YouTube Page
     // localeLang = 'zh'  // uncomment this line to define the language you wish here
+    let enableFullWidthSpaceSeparation = true
+    function encodeFullwidthSpace(text) {
+        if (!enableFullWidthSpaceSeparation) return text
+        return text.replace(/\n/g, '\n1\n').replace(/\u3000/g, '\n2\n')
+    }
+    function decodeFullwidthSpace(text) {
+        if (!enableFullWidthSpaceSeparation) return text
+        return text.replace(/\n2\n/g, '\u3000').replace(/\n1\n/g, '\n')
+    }
     ah.proxy({
         onRequest: (config, handler) => {
             handler.next(config);
@@ -37,15 +46,19 @@
                     }
                 }
             }
-            let q = encodeURIComponent(lines.join('\n'))
+            let linesText = lines.join('\n')
+            linesText = encodeFullwidthSpace(linesText)
+            let q = encodeURIComponent(linesText)
             fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${localeLang}&dj=1&dt=t&dt=rm&q=${q}`)
                 .then(res => {
                     return res.json()
                 })
                 .then(result => {
-                    return result.sentences.map((function (s) {
+                    let resultText = result.sentences.map((function (s) {
                         return "trans" in s ? s.trans : "";
-                    })).join("").split("\n");
+                    })).join("")
+                    resultText = decodeFullwidthSpace(resultText)
+                    return resultText.split("\n");
                 })
                 .then(translatedLines => {
                     const addTranslation = (line, idx) => {
