@@ -66,7 +66,10 @@
                     })
                     .then(translatedLines => {
                         const addTranslation = (line, idx) => {
-                            return line === lines[i + idx] ? line + '\n' + translatedLines[i + idx] : line
+                            if (line !== lines[i + idx]) return line
+                            let translated = translatedLines[i + idx]
+                            if (line === translated) return line
+                            return `${line}\n${translated}`
                         }
                         let i = 0
                         for (const event of defaultJson.events) {
