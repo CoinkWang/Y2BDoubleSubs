@@ -31,53 +31,64 @@
             handler.next(config);
         },
         onResponse: (response, handler) => {
-            if (!response.config.url.includes('/api/timedtext') || response.config.url.includes('&translate_h00ked')) return
-            let defaultJson = null
-            if (response.response) {
-                const jsonResponse = JSON.parse(response.response)
-                if (jsonResponse.events) defaultJson = jsonResponse
+            function defaultAction() {
+                handler.resolve(response)
             }
-            if (defaultJson === null) return
-            let lines = []
-            for (const event of defaultJson.events) {
-                for (const seg of event.segs) {
-                    if ('utf8' in seg && typeof seg.utf8 === 'string') {
-                        lines.push(...seg.utf8.split('\n'))
-                    }
+            try {
+                if (!response.config.url.includes('/api/timedtext') || response.config.url.includes('&translate_h00ked')) return defaultAction()
+                let defaultJson = null
+                if (response.response) {
+                    const jsonResponse = JSON.parse(response.response)
+                    if (jsonResponse.events) defaultJson = jsonResponse
                 }
-            }
-            let linesText = lines.join('\n')
-            linesText = encodeFullwidthSpace(linesText)
-            let q = encodeURIComponent(linesText)
-            fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${localeLang}&dj=1&dt=t&dt=rm&q=${q}`)
-                .then(res => {
-                    return res.json()
-                })
-                .then(result => {
-                    let resultText = result.sentences.map((function (s) {
-                        return "trans" in s ? s.trans : "";
-                    })).join("")
-                    resultText = decodeFullwidthSpace(resultText)
-                    return resultText.split("\n");
-                })
-                .then(translatedLines => {
-                    const addTranslation = (line, idx) => {
-                        return line === lines[i + idx] ? line + '\n' + translatedLines[i + idx] : line
-                    }
-                    let i = 0
-                    for (const event of defaultJson.events) {
-                        for (const seg of event.segs) {
-                            if ('utf8' in seg && typeof seg.utf8 === 'string') {
-                                let s = seg.utf8.split('\n')
-                                let st = s.map(addTranslation)
-                                seg.utf8 = st.join('\n')
-                                i += s.length
-                            }
+                if (defaultJson === null) return defaultAction()
+                let lines = []
+                for (const event of defaultJson.events) {
+                    for (const seg of event.segs) {
+                        if ('utf8' in seg && typeof seg.utf8 === 'string') {
+                            lines.push(...seg.utf8.split('\n'))
                         }
                     }
-                    response.response = JSON.stringify(defaultJson)
-                    handler.resolve(response)
-                })
+                }
+                let linesText = lines.join('\n')
+                linesText = encodeFullwidthSpace(linesText)
+                let q = encodeURIComponent(linesText)
+                fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${localeLang}&dj=1&dt=t&dt=rm&q=${q}`)
+                    .then(res => {
+                        return res.json()
+                    })
+                    .then(result => {
+                        let resultText = result.sentences.map((function (s) {
+                            return "trans" in s ? s.trans : "";
+                        })).join("")
+                        resultText = decodeFullwidthSpace(resultText)
+                        return resultText.split("\n");
+                    })
+                    .then(translatedLines => {
+                        const addTranslation = (line, idx) => {
+                            return line === lines[i + idx] ? line + '\n' + translatedLines[i + idx] : line
+                        }
+                        let i = 0
+                        for (const event of defaultJson.events) {
+                            for (const seg of event.segs) {
+                                if ('utf8' in seg && typeof seg.utf8 === 'string') {
+                                    let s = seg.utf8.split('\n')
+                                    let st = s.map(addTranslation)
+                                    seg.utf8 = st.join('\n')
+                                    i += s.length
+                                }
+                            }
+                        }
+                        response.response = JSON.stringify(defaultJson)
+                        handler.resolve(response)
+                    }).catch(e => {
+                        console.warn(e)
+                        defaultAction()
+                    })
+            } catch (e) {
+                console.warn(e)
+                defaultAction()
+            }
         }
     })
 })();
