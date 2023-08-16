@@ -20,11 +20,11 @@
     let enableFullWidthSpaceSeparation = true
     function encodeFullwidthSpace(text) {
         if (!enableFullWidthSpaceSeparation) return text
-        return text.replace(/\n/g, '\n1\n').replace(/\u3000/g, '\n2\n')
+        return text.replace(/\n/g, '\n®\n').replace(/\u3000/g, '\n©\n')
     }
     function decodeFullwidthSpace(text) {
         if (!enableFullWidthSpaceSeparation) return text
-        return text.replace(/\n2\n/g, '\u3000').replace(/\n1\n/g, '\n')
+        return text.replace(/\n©\n/g, '\u3000').replace(/\n®\n/g, '\n')
     }
     ah.proxy({
         onRequest: (config, handler) => {
