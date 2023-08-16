@@ -12,74 +12,86 @@
 // @namespace    https://github.com/CoinkWang/Y2BDoubleSubs
 // ==/UserScript==
 
-(function() {
+/* global ah */
+
+(function () {
     let localeLang = document.documentElement.lang || navigator.language || 'en' // follow the language used in YouTube Page
-        // localeLang = 'zh'  // uncomment this line to define the language you wish here
+    // localeLang = 'zh'  // uncomment this line to define the language you wish here
+    let enableFullWidthSpaceSeparation = true
+    function encodeFullwidthSpace(text) {
+        if (!enableFullWidthSpaceSeparation) return text
+        return text.replace(/\n/g, '\n®\n').replace(/\u3000/g, '\n©\n')
+    }
+    function decodeFullwidthSpace(text) {
+        if (!enableFullWidthSpaceSeparation) return text
+        return text.replace(/\n©\n/g, '\u3000').replace(/\n®\n/g, '\n')
+    }
     ah.proxy({
         onRequest: (config, handler) => {
             handler.next(config);
         },
         onResponse: (response, handler) => {
-            if (response.config.url.includes('/api/timedtext') && !response.config.url.includes('&translate_h00ked')) {
-                let xhr = new XMLHttpRequest();
-                // Use RegExp to clean '&tlang=...' in our xhr request params while using Y2B auto translate.
-                let url = response.config.url
-                url = url.replace(/(^|[&?])tlang=[^&]*/g, '')
-                url = `${url}&tlang=${localeLang}&translate_h00ked`
-                xhr.open('GET', url, false);
-                xhr.send();
+            function defaultAction() {
+                handler.resolve(response)
+            }
+            try {
+                if (!response.config.url.includes('/api/timedtext') || response.config.url.includes('&translate_h00ked')) return defaultAction()
                 let defaultJson = null
                 if (response.response) {
                     const jsonResponse = JSON.parse(response.response)
                     if (jsonResponse.events) defaultJson = jsonResponse
                 }
-                const localeJson = JSON.parse(xhr.response)
-                let isOfficialSub = true;
-                for (const defaultJsonEvent of defaultJson.events) {
-                    if (defaultJsonEvent.segs && defaultJsonEvent.segs.length > 1) {
-                        isOfficialSub = false;
-                        break;
-                    }
-                }
-                // Merge default subs with locale language subs
-                if (isOfficialSub) {
-                    // when length of segments are the same
-                    for (let i = 0, len = defaultJson.events.length; i < len; i++) {
-                        const defaultJsonEvent = defaultJson.events[i]
-                        if (!defaultJsonEvent.segs) continue
-                        const localeJsonEvent = localeJson.events[i]
-                        if (`${defaultJsonEvent.segs[0].utf8}`.trim() !== `${localeJsonEvent.segs[0].utf8}`.trim()) {
-                            // avoid merge subs while the are the same
-                            defaultJsonEvent.segs[0].utf8 += ('\n' + localeJsonEvent.segs[0].utf8)
+                if (defaultJson === null) return defaultAction()
+                let lines = []
+                for (const event of defaultJson.events) {
+                    for (const seg of event.segs) {
+                        if ('utf8' in seg && typeof seg.utf8 === 'string') {
+                            lines.push(...seg.utf8.split('\n'))
                         }
                     }
-                    response.response = JSON.stringify(defaultJson)
-                } else {
-                    // when length of segments are not the same (e.g. automatic generated english subs)
-                    let pureLocalEvents = localeJson.events.filter(event => event.aAppend !== 1 && event.segs)
-                    for (const defaultJsonEvent of defaultJson.events) {
-                        if (!defaultJsonEvent.segs) continue
-                        let currentStart = defaultJsonEvent.tStartMs,
-                            currentEnd = currentStart + defaultJsonEvent.dDurationMs
-                        let currentLocalEvents = pureLocalEvents.filter(pe => currentStart <= pe.tStartMs && pe.tStartMs < currentEnd)
-                        let localLine = ''
-                        for (const ev of currentLocalEvents) {
-                            for (const seg of ev.segs) {
-                                localLine += seg.utf8
+                }
+                let linesText = lines.join('\n')
+                linesText = encodeFullwidthSpace(linesText)
+                let q = encodeURIComponent(linesText)
+                fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${localeLang}&dj=1&dt=t&dt=rm&q=${q}`)
+                    .then(res => {
+                        return res.json()
+                    })
+                    .then(result => {
+                        let resultText = result.sentences.map((function (s) {
+                            return "trans" in s ? s.trans : "";
+                        })).join("")
+                        resultText = decodeFullwidthSpace(resultText)
+                        return resultText.split("\n");
+                    })
+                    .then(translatedLines => {
+                        const addTranslation = (line, idx) => {
+                            if (line !== lines[i + idx]) return line
+                            let translated = translatedLines[i + idx]
+                            if (line === translated) return line
+                            return `${line}\n${translated}`
+                        }
+                        let i = 0
+                        for (const event of defaultJson.events) {
+                            for (const seg of event.segs) {
+                                if ('utf8' in seg && typeof seg.utf8 === 'string') {
+                                    let s = seg.utf8.split('\n')
+                                    let st = s.map(addTranslation)
+                                    seg.utf8 = st.join('\n')
+                                    i += s.length
+                                }
                             }
-                            localLine += '﻿'; // add ZWSP to avoid words stick together
                         }
-                        let defaultLine = ''
-                        for (const seg of defaultJsonEvent.segs) {
-                            defaultLine += seg.utf8
-                        }
-                        defaultJsonEvent.segs[0].utf8 = defaultLine + '\n' + localLine
-                        defaultJsonEvent.segs = [defaultJsonEvent.segs[0]]
-                    }
-                    response.response = JSON.stringify(defaultJson)
-                }
+                        response.response = JSON.stringify(defaultJson)
+                        handler.resolve(response)
+                    }).catch(e => {
+                        console.warn(e)
+                        defaultAction()
+                    })
+            } catch (e) {
+                console.warn(e)
+                defaultAction()
             }
-            handler.resolve(response)
         }
     })
 })();
